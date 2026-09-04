@@ -14,9 +14,7 @@
 
 第一次打开工程时，先不要逐个阅读几百个文件。只需记住：应用流程在 `main.c`，自己写的驱动在 `User/`，引脚和外设参数应回到 `.ioc` 修改。
 
-![工程目录结构图，标出初学者应先读的文件](docs/images/01-project-layout.svg)
-
-图中颜色含义：
+修改规则：
 
 - **绿色——可以修改：** 教程、`User/` 驱动和 CMake 用户源码列表。
 - **橙色——只改 USER CODE：** `Core/Src/main.c` 中 `USER CODE BEGIN/END` 之间的内容。
@@ -53,8 +51,6 @@
 
 主流程仅使用 Windows 10/11、VS Code、STM32CubeMX、ST 官方扩展和 ST-LINK。先看懂各软件的分工，再开始安装：
 
-![从源代码到 STM32 的工具链关系图](docs/images/00-toolchain-map.svg)
-
 | 软件或工具 | 它做什么 | 第一次编译是否必需 |
 |---|---|---|
 | VS Code | 编辑代码，提供统一操作界面 | 必需 |
@@ -90,7 +86,7 @@
 3. 确认发布者是 **STMicroelectronics**，安装 3.x 版本。
 4. 安装完成后重启 VS Code。
 
-![VS Code 安装 ST 官方扩展界面示意图](docs/images/02-vscode-extension.svg)
+![VS Code 中搜索并安装 STM32CubeIDE for Visual Studio Code](docs/images/vscode-extension.png)
 
 扩展的官方名称、要求和更新说明以 [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=stmicroelectronics.stm32-vscode-extension) 为准。
 
@@ -107,7 +103,7 @@
 | STM32CubeProgrammer | `2.23.0` | 下载程序 |
 | ST-LINK GDB Server | `7.14.0+st.2` | 在线调试 |
 
-![Bundle Manager 下载项目工具界面示意图](docs/images/03-bundle-manager.svg)
+![STM32Cube Bundles 管理器中的系统工具列表](docs/images/bundle-manager.png)
 
 工具包较大，第一次下载需要等待。全部项目显示为已安装后再打开工程。详细步骤参见 [ST 官方安装文档](https://dev.st.com/stm32cube-docs/stm32cubeide-vscode/latest/en/docs/markup/getting_started/installation.html)。
 
@@ -120,7 +116,7 @@ Windows 驱动目前仍可能需要管理员权限手动安装：
 3. 插入 ST-LINK，打开 Windows **设备管理器**。
 4. 在 USB 设备中确认存在 ST-LINK，且没有黄色感叹号。
 
-![ST-LINK 驱动入口和设备管理器检查示意图](docs/images/04-stlink-driver.svg)
+![STM32Cube 资源区域中的安装 ST-Link USB 驱动程序入口](docs/images/stlink-driver.png)
 
 如果电脑能识别 ST-LINK、但提示 `No target found`，通常不是 USB 驱动问题，而是开发板供电、SWD 接线、复位或芯片侧连接问题。
 
@@ -159,8 +155,6 @@ Core/
 User/
 ```
 
-![打开正确工程根目录的界面示意图](docs/images/05-open-project.svg)
-
 最常见的错误是只打开 `Core`、`User` 或外面多一层的下载目录。判断方法很简单：VS Code 资源管理器顶层应直接看见 `.ioc` 和 `CMakeLists.txt`。
 
 若没有自动识别工程，按 `Ctrl+Shift+P`，运行 **STM32Cube: Set up STM32Cube projects**（部分 3.x 界面称为 Discover/Configure STM32Cube project），然后选择当前项目。
@@ -168,8 +162,6 @@ User/
 ## 4. 连接 ST-LINK
 
 先断电接线，核对后再给开发板供电。
-
-![ST-LINK 与 STM32G474 的 SWD 五线接线图](docs/images/08-swd-wiring.svg)
 
 | ST-LINK | 开发板 | 作用 |
 |---|---|---|
@@ -188,11 +180,11 @@ User/
 1. 打开 VS Code 底部状态栏或 CMake 面板。
 2. 选择 **Configure Preset: Debug**。
 3. 点击 **Configure**，等待生成 `build/Debug`。
-4. 点击 **Build**。
+4. 点击底部状态栏的 **生成（Build）**。
 
-![选择 Debug preset 并执行 Configure 的界面示意图](docs/images/06-configure-debug.svg)
+![VS Code 底部状态栏中的生成按钮](docs/images/build-button.png)
 
-![编译成功及 ELF 文件位置示意图](docs/images/07-build-success.svg)
+图中只需要关注齿轮右侧的“生成”按钮。左侧显示的项目分组名称会随当前工作区变化，不影响本工程的构建操作。
 
 编译成功的关键标志是：没有 `error`，并生成：
 
@@ -217,8 +209,6 @@ cmake --build --preset Debug --clean-first --parallel
 4. 按 `F5`。扩展会先构建，再下载 ELF，最后在 `main()` 停住。
 5. 看到黄色执行箭头停在 `main()` 是正常现象；再按一次 `F5` 才会继续运行。
 
-![VS Code Run and Debug 下载界面示意图](docs/images/09-run-debug.svg)
-
 本工程调试项来自 [`.vscode/launch.json`](.vscode/launch.json)，其中 `runEntry` 设置为 `main`，所以首次进入调试会主动停在这里。官方调试说明见 [ST Debug 文档](https://dev.st.com/stm32cube-docs/stm32cubeide-vscode/latest/en/docs/markup/development/debug.html)。
 
 ### 备用方法：STM32CubeProgrammer GUI
@@ -230,13 +220,9 @@ VS Code 调试暂时不可用时，可以使用 [STM32CubeProgrammer](https://ww
 3. 在下载页面选择 `build/Debug/G474_Starter.elf`。
 4. 点击 **Download**，完成后点击 **Reset** 或给板卡重新上电。
 
-![STM32CubeProgrammer 备用下载流程示意图](docs/images/10-cubeprogrammer.svg)
-
 ## 7. 第一次运行
 
-继续运行或复位后，OLED 应显示下面的主菜单示意：
-
-![OLED 首次运行菜单示意图](docs/images/11-first-run-oled.svg)
+继续运行或复位后，OLED 应显示标题 `G474 DEMO MENU` 和菜单列表。
 
 操作方式：
 
@@ -285,4 +271,4 @@ VS Code 调试暂时不可用时，可以使用 [STM32CubeProgrammer](https://ww
 - [码工许师傅：搭建基于 ST 官方 VS Code 扩展的 STM32 开发环境](https://blog.csdn.net/xusiwei1236/article/details/141504722)
 - [black_sneak：VS Code STM32 入门文章](https://blog.csdn.net/black_sneak/article/details/157097181)
 
-第三篇文章采用 CC BY-SA 4.0，但其截图对应旧版扩展、STM32CubeCLT 和另一块 MCU 板卡。为了避免初学者把旧界面、H7 引脚或手工工具路径套到本工程，当前仓库没有直接复制这些截图，而是保留原创示意图。需要查阅旧版完整操作过程时，请直接访问原文。
+第三篇文章采用 CC BY-SA 4.0，但其截图对应旧版扩展、STM32CubeCLT 和另一块 MCU 板卡。为了避免初学者把旧界面、H7 引脚或手工工具路径套到本工程，当前仓库没有复制这些旧截图。README 中的 VS Code 截图由本项目维护者从当前环境实际截取。
