@@ -12,7 +12,7 @@
 | 基础通信 | I2C、OLED、FRAM | 总线、地址、读写和驱动分层 |
 | 定时器 | Encoder | 外设硬件计数与溢出处理 |
 | 进阶通信 | SPI、SD、FatFs | 协议层、块设备、文件系统 |
-| 中断通信 | UART | 阻塞发送、单字节中断接收、回调 |
+| 基础通信 | UART | 先学习阻塞收发，再理解单字节中断接收和回调 |
 | 总线通信 | FDCAN | 波特率、过滤器、ACK、Bus-Off |
 
 程序从 [`main.c`](../Core/Src/main.c) 开始：
@@ -326,7 +326,7 @@ if (SD_FileTest())
 **常见错误：** Init ERR 查接线/低速；Mount ERR 查格式；Write ERR 查供电/MOSI；Verify ERR 查 MISO 和信号完整性。  
 **练习：** 写入一个递增计数，并检查每次 `FRESULT` 与实际字节数。
 
-## 11. UART：阻塞发送和单字节中断接收
+## 11. UART：先学阻塞收发，再学中断接收
 
 ### 它是什么
 
@@ -339,15 +339,70 @@ UART 是异步串口，两端必须共地并设置相同参数。本工程 USART
 - CubeMX 配置：[`usart.c`](../Core/Src/usart.c)。
 - 页面与回调：[`main.c`](../Core/Src/main.c)。
 
-### 阻塞发送
+USB 转串口模块应使用 **3.3 V TTL 电平**，并交叉连接：模块 RX 接开发板 TX，模块 TX 接开发板 RX，两边 GND 必须相连。不要把 RS-232 接口直接接到 MCU 引脚。
+
+### 先理解“阻塞”
+
+阻塞函数被调用后，CPU 会留在这个函数里等待操作完成或超时。在等待期间，主循环暂时不能刷新 OLED、读取按键或运行其他页面。
+
+它的优点是代码短、执行顺序直观，很适合验证接线和学习第一个串口程序；缺点是等待时间过长会影响整个系统。正式的多功能程序通常改用中断或 DMA。
+
+### 阻塞发送 `HAL_UART_Transmit()`
 
 ```c
 static const uint8_t text[] = "USART3 TEST\r\n";
-(void)HAL_UART_Transmit(&huart3, (uint8_t *)text,
-                        (uint16_t)(sizeof(text) - 1U), 100U);
+HAL_StatusTypeDef result;
+
+result = HAL_UART_Transmit(&huart3, (uint8_t *)text,
+                           (uint16_t)(sizeof(text) - 1U), 100U);
+
+if (result == HAL_OK)
+{
+    /* 所有字节已在超时时间内发送完成 */
+}
 ```
 
-### 中断接收
+四个参数依次表示：使用哪个 UART、数据缓冲区、发送多少字节、最长等待多少毫秒。字符串结尾的 `\0` 不需要发送，所以长度使用 `sizeof(text) - 1U`。
+
+本工程的 UART 页面每秒通过 USART3 发送一次信息，这就是一个真实的阻塞发送示例，可在 [`UART_TestProcess()`](../Core/Src/main.c) 中查看。
+
+### 阻塞接收 `HAL_UART_Receive()`
+
+下面的代码等待 USART2 收到 **1 个字节**，最长等待 1000 ms；收到后再把它原样发回，形成最简单的串口回显：
+
+```c
+uint8_t rx_byte;
+HAL_StatusTypeDef result;
+
+result = HAL_UART_Receive(&huart2, &rx_byte, 1U, 1000U);
+
+if (result == HAL_OK)
+{
+    /* 收到一个字节，把它发回串口助手 */
+    (void)HAL_UART_Transmit(&huart2, &rx_byte, 1U, 100U);
+}
+else if (result == HAL_TIMEOUT)
+{
+    /* 1 秒内没有收到完整数据，可以继续执行其他代码 */
+}
+```
+
+阻塞接收的第三个参数是“必须接收完成的字节数”。例如填写 `8U` 时，HAL 会等待收满8个字节才返回 `HAL_OK`；只发送1个字节会一直等到超时。这是初学者最常遇到的误区。
+
+常见返回值：
+
+| 返回值 | 含义 |
+|---|---|
+| `HAL_OK` | 在超时前完成收发 |
+| `HAL_TIMEOUT` | 等待时间已到，数据仍未收完整 |
+| `HAL_BUSY` | 这个 UART 正在执行其他收发操作 |
+| `HAL_ERROR` | 发生串口错误或参数/状态异常 |
+
+学习阻塞接收时不要一开始就使用 `HAL_MAX_DELAY`，否则没有数据时程序会永久停在接收函数里，看起来像“死机”。建议先设置明确的超时时间，并用调试器观察返回值。
+
+### 从阻塞接收过渡到中断接收
+
+本工程需要同时响应 OLED 菜单、按键、编码器和 CAN，因此 USART2 没有在主循环里长期调用阻塞接收，而是使用单字节接收中断：
 
 ```c
 HAL_UART_Receive_IT(&huart2, &uart2_rx_byte, 1U);
@@ -366,8 +421,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 每接收一个字节后必须再次调用 `HAL_UART_Receive_IT()`。回调只保存数据，主循环再回显，避免中断中阻塞。被中断和主循环共同访问的标志使用 `volatile`。
 
 **正常现象：** UART2 输入字符被原样回显；UART3 每秒输出 `USART3 TEST: n`。  
-**常见错误：** 乱码查 115200 8N1、TTL 电平、TX/RX 交叉和共地。当前只保存最新字节，高速流数据应学习环形缓冲或 DMA。  
-**练习：** 把 UART2 收到的小写字母转换为大写再回显。
+**常见错误：** 乱码查 115200 8N1、3.3 V TTL 电平、TX/RX 交叉和共地；阻塞接收总是超时时，检查接收长度是否大于实际发送长度。当前中断示例只保存最新字节，高速流数据应学习环形缓冲或 DMA。
+**练习：** 先把上面的阻塞回显示例放进一个独立小工程运行，再把 UART2 收到的小写字母转换为大写后回显，最后比较阻塞接收和本工程中断接收时 OLED 是否仍能及时刷新。
 
 ## 12. FDCAN1：500 kbit/s 经典 CAN
 

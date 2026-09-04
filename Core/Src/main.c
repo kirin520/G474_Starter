@@ -887,7 +887,11 @@ int main(void)
   Encoder_Init();
   (void)CAN_Init();
 
-  /* UART2只接收一个字节；每次回调后立即重新启动下一次接收。 */
+  /*
+   * 入门时可以先用 HAL_UART_Receive() 学习阻塞接收；它会让 CPU 等待
+   * 数据或超时。本工程还要同时刷新菜单和读取按键，所以改用单字节
+   * 中断接收。每次完成后，回调会立即启动下一次接收。
+   */
   if (HAL_UART_Receive_IT(&huart2, &uart2_rx_byte, 1U) != HAL_OK)
   {
     Error_Handler();
