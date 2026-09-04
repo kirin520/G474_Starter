@@ -43,7 +43,23 @@
 
 ## 2. 配置 Windows 开发环境
 
-主流程仅使用 Windows 10/11、VS Code、ST 官方扩展和 ST-LINK。不要同时照着 EIDE、Keil、OpenOCD 或旧版手动 CubeCLT 教程配置，否则很容易让工具链互相冲突。
+主流程仅使用 Windows 10/11、VS Code、STM32CubeMX、ST 官方扩展和 ST-LINK。先看懂各软件的分工，再开始安装：
+
+![从源代码到 STM32 的工具链关系图](docs/images/00-toolchain-map.svg)
+
+| 软件或工具 | 它做什么 | 第一次编译是否必需 |
+|---|---|---|
+| VS Code | 编辑代码，提供统一操作界面 | 必需 |
+| STM32CubeIDE for Visual Studio Code | 让 VS Code 识别、构建和调试 STM32 工程 | 必需 |
+| STM32CubeMX | 修改 `.ioc` 中的引脚、时钟和外设，并重新生成代码 | 只编译现有工程时可不装；二次开发建议安装 |
+| CMake | 根据 `CMakeLists.txt` 生成 Ninja 构建规则 | 必需，由 Bundle Manager 安装 |
+| Ninja | 按构建规则调用编译器 | 必需，由 Bundle Manager 安装 |
+| GNU Tools for STM32 | 把 C/汇编编译、链接成 ELF，并提供 GDB | 必需，由 Bundle Manager 安装 |
+| ST-LINK GDB Server | 连接 GDB 与 ST-LINK | 调试时必需 |
+| STM32CubeProgrammer | 把 ELF 写入 MCU Flash | 下载时必需 |
+| ST-LINK USB 驱动 | 让 Windows 正确识别 ST-LINK | 必需，需要手动安装 |
+
+> 一些旧教程使用 STM32CubeCLT、旧版 STM32 VS Code Extension 2.x 和 Cortex-Debug 手工路径。它们的原理仍有参考价值，但本工程使用官方扩展 3.x 的 Bundle Manager，不要再照着旧教程重复安装工具链或覆盖当前 `launch.json`。
 
 ### 2.1 安装 VS Code
 
@@ -51,7 +67,15 @@
 2. 正常完成安装并启动 VS Code。
 3. 如果已安装，可直接使用；不要求把编译器手工加入 `PATH`。
 
-### 2.2 安装 ST 官方扩展
+### 2.2 安装 STM32CubeMX
+
+1. 从 [ST 官方 STM32CubeMX 页面](https://www.st.com/en/development-tools/stm32cubemx.html) 下载安装。
+2. 第一次启动时按提示登录 ST 账号并安装 STM32G4 Firmware Package。
+3. 双击 [`G474_Starter.ioc`](G474_Starter.ioc)，确认 CubeMX 能正常打开本工程。
+
+如果你现在只想编译和烧录仓库中已经生成好的代码，可以暂时跳过 CubeMX；当你需要修改引脚、时钟或外设参数时再安装。不要在 `gpio.c`、`spi.c` 等生成文件中硬改参数。
+
+### 2.3 安装 ST 官方扩展
 
 1. 点击 VS Code 左侧 **Extensions（扩展）** 图标，或按 `Ctrl+Shift+X`。
 2. 搜索 `STM32CubeIDE for Visual Studio Code`。
@@ -62,7 +86,7 @@
 
 扩展的官方名称、要求和更新说明以 [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=stmicroelectronics.stm32-vscode-extension) 为准。
 
-### 2.3 用 Bundle Manager 下载工程工具
+### 2.4 用 Bundle Manager 下载工程工具
 
 安装扩展不等于已经拥有编译器。点击左侧 STM32Cube 图标，打开 **STM32Cube Bundles Manager**，让它按本工程的 `.settings/bundles.store.json` 安装以下工具：
 
@@ -79,7 +103,7 @@
 
 工具包较大，第一次下载需要等待。全部项目显示为已安装后再打开工程。详细步骤参见 [ST 官方安装文档](https://dev.st.com/stm32cube-docs/stm32cubeide-vscode/latest/en/docs/markup/getting_started/installation.html)。
 
-### 2.4 安装 ST-LINK USB 驱动
+### 2.5 安装 ST-LINK USB 驱动
 
 Windows 驱动目前仍可能需要管理员权限手动安装：
 
@@ -91,6 +115,16 @@ Windows 驱动目前仍可能需要管理员权限手动安装：
 ![ST-LINK 驱动入口和设备管理器检查示意图](docs/images/04-stlink-driver.svg)
 
 如果电脑能识别 ST-LINK、但提示 `No target found`，通常不是 USB 驱动问题，而是开发板供电、SWD 接线、复位或芯片侧连接问题。
+
+### 2.6 安装完成后的检查清单
+
+在继续之前逐项确认：
+
+- VS Code 的扩展页面显示 `STM32CubeIDE for Visual Studio Code` 已安装。
+- Bundle Manager 中本工程要求的 6 个工具均为 Installed/Ready。
+- 设备管理器能看到 ST-LINK，且没有黄色感叹号。
+- 若需要修改 `.ioc`，STM32CubeMX 能打开工程并识别 STM32G474VET6。
+- 不需要手工配置系统 `PATH`，也不要把其他 GCC、CMake 或 OpenOCD 路径写进本工程。
 
 ## 3. 下载并打开工程
 
@@ -233,4 +267,13 @@ VS Code 调试暂时不可用时，可以使用 [STM32CubeProgrammer](https://ww
 - 遇到 ST-LINK、Default_Handler、SD、UART 或 CAN 问题：打开 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)。
 - 想改引脚或时钟：打开 [`G474_Starter.ioc`](G474_Starter.ioc)，在 CubeMX 修改并重新生成；自定义代码应放在 `USER CODE` 区域或 `User/`。
 
-本教程的组织方式参考了用户提供的 [VS Code STM32 入门文章](https://blog.csdn.net/black_sneak/article/details/157097181)，但文字、流程图和界面示意图均针对本工程重新编写和制作。
+## 10. 参考与图片说明
+
+环境章节参考了以下资料，并按当前官方扩展 3.x 和本工程的 Bundle Manager 配置重新核对：
+
+- [ST 官方安装文档](https://dev.st.com/stm32cube-docs/stm32cubeide-vscode/latest/en/docs/markup/getting_started/installation.html)
+- [ST 官方调试文档](https://dev.st.com/stm32cube-docs/stm32cubeide-vscode/latest/en/docs/markup/development/debug.html)
+- [码工许师傅：搭建基于 ST 官方 VS Code 扩展的 STM32 开发环境](https://blog.csdn.net/xusiwei1236/article/details/141504722)
+- [black_sneak：VS Code STM32 入门文章](https://blog.csdn.net/black_sneak/article/details/157097181)
+
+第三篇文章采用 CC BY-SA 4.0，但其截图对应旧版扩展、STM32CubeCLT 和另一块 MCU 板卡。为了避免初学者把旧界面、H7 引脚或手工工具路径套到本工程，当前仓库没有直接复制这些截图，而是保留原创示意图。需要查阅旧版完整操作过程时，请直接访问原文。
