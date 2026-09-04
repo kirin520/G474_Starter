@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 620" role="img" aria-labelledby="title desc">
+  <title id="title">选择 Debug preset 和 Configure 界面示意图</title><desc id="desc">展示 VS Code CMake 面板中选择 Debug 后执行 Configure。</desc>
+  <style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif}.title{font-size:28px;font-weight:700}.h{font-size:20px;font-weight:700}.t{font-size:17px}.s{font-size:14px}.white{fill:#f8fafc}.muted{fill:#a1a1aa}.red{fill:none;stroke:#ef4444;stroke-width:4}.n{fill:#ef4444}</style>
+  <rect width="1100" height="620" fill="#f8fafc"/><text x="35" y="42" class="title" fill="#111827">先 Configure，再 Build</text><text x="900" y="42" class="s" fill="#64748b">界面示意图</text>
+  <rect x="35" y="75" width="1030" height="500" rx="10" fill="#18181b"/><rect x="35" y="75" width="390" height="500" fill="#252526"/>
+  <text x="65" y="117" class="h white">CMAKE</text><text x="65" y="165" class="t muted">Configure Preset</text>
+  <rect x="65" y="183" width="320" height="48" rx="4" fill="#3c3c3c"/><text x="85" y="214" class="t white">Debug</text><text x="355" y="214" class="t white">⌄</text><rect x="55" y="173" width="340" height="68" class="red"/>
+  <circle cx="398" cy="169" r="16" class="n"/><text x="393" y="175" class="s white">1</text>
+  <rect x="65" y="275" width="150" height="48" rx="4" fill="#007acc"/><text x="100" y="306" class="t white">Configure</text><rect x="55" y="265" width="170" height="68" class="red"/><circle cx="228" cy="261" r="16" class="n"/><text x="223" y="267" class="s white">2</text>
+  <rect x="245" y="275" width="140" height="48" rx="4" fill="#374151"/><text x="292" y="306" class="t white">Build</text><rect x="235" y="265" width="160" height="68" class="red"/><circle cx="398" cy="338" r="16" class="n"/><text x="393" y="344" class="s white">3</text>
+  <rect x="460" y="110" width="560" height="390" rx="8" fill="#111827"/><text x="490" y="150" class="h white">OUTPUT · STM32Cube CMake</text>
+  <text x="490" y="205" class="s muted">Preset: Debug</text><text x="490" y="235" class="s muted">Generator: Ninja</text><text x="490" y="265" class="s muted">Build directory: build/Debug</text>
+  <text x="490" y="330" class="t" fill="#4ade80">Configuring done</text><text x="490" y="366" class="t" fill="#4ade80">Generating done</text><text x="490" y="402" class="t white">Build files have been written.</text>
+  <text x="460" y="545" class="s muted">Debug 保留调试信息，最适合第一次学习和断点观察。</text>
+</svg>
