@@ -43,6 +43,14 @@
 
 ## 2. 配置 Windows 开发环境
 
+### 先看官方安装视频
+
+第一次配置环境，建议先完整观看下面的视频。点击封面会跳转到 Bilibili：
+
+[![STM32CubeIDE for Visual Studio Code 安装视频封面](https://i1.hdslb.com/bfs/archive/9448680554e7619f978d651db4e157c8b1b1750c.jpg)](https://www.bilibili.com/video/BV1JJ2cBHE2f/)
+
+> 视频：[STM32CubeIDE for Visual Studio Code 安装](https://www.bilibili.com/video/BV1JJ2cBHE2f/)，发布者：意法半导体中国，时长约 6 分 49 秒。视频负责展示真实界面；下文负责说明本工程具体需要哪些工具、版本和检查项。
+
 主流程仅使用 Windows 10/11、VS Code、STM32CubeMX、ST 官方扩展和 ST-LINK。先看懂各软件的分工，再开始安装：
 
 ![从源代码到 STM32 的工具链关系图](docs/images/00-toolchain-map.svg)
@@ -273,6 +281,7 @@ VS Code 调试暂时不可用时，可以使用 [STM32CubeProgrammer](https://ww
 
 - [ST 官方安装文档](https://dev.st.com/stm32cube-docs/stm32cubeide-vscode/latest/en/docs/markup/getting_started/installation.html)
 - [ST 官方调试文档](https://dev.st.com/stm32cube-docs/stm32cubeide-vscode/latest/en/docs/markup/development/debug.html)
+- [意法半导体中国：STM32CubeIDE for Visual Studio Code 安装（视频）](https://www.bilibili.com/video/BV1JJ2cBHE2f/)
 - [码工许师傅：搭建基于 ST 官方 VS Code 扩展的 STM32 开发环境](https://blog.csdn.net/xusiwei1236/article/details/141504722)
 - [black_sneak：VS Code STM32 入门文章](https://blog.csdn.net/black_sneak/article/details/157097181)
 
