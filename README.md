@@ -29,7 +29,7 @@
 | [`Core/Src`](Core/Src) | CubeMX 生成的 GPIO、I2C、SPI、UART、TIM、FDCAN 初始化 | 可以阅读；参数回 `.ioc` 修改 |
 | [`Drivers`](Drivers) | ST 官方 HAL 和 CMSIS 库 | 不要修改 |
 | [`ThirdParty/FatFs`](ThirdParty/FatFs) | SD 卡 FAT 文件系统 | 先当作库使用 |
-| [`G474_Starter.ioc`](G474_Starter.ioc) | MCU 型号、引脚、时钟和外设配置源 | 用 CubeMX 修改硬件配置 |
+| `G474_Starter.ioc` | MCU 型号、引脚、时钟和外设配置源 | 用 CubeMX 修改硬件配置；不要把它当普通文本文件编辑 |
 | [`CMakeLists.txt`](CMakeLists.txt) | 告诉 CMake 要编译哪些用户源码、去哪里找头文件 | 新增 `.c` 文件时需要更新 |
 | [`CMakePresets.json`](CMakePresets.json) | 定义 `Debug` 和 `Release` 构建方式 | 初学阶段选择 `Debug` |
 | [`.vscode/launch.json`](.vscode/launch.json) | ST-LINK 下载/调试配置 | 通常不用改 |
@@ -75,7 +75,9 @@
 
 1. 从 [ST 官方 STM32CubeMX 页面](https://www.st.com/en/development-tools/stm32cubemx.html) 下载安装。
 2. 第一次启动时按提示登录 ST 账号并安装 STM32G4 Firmware Package。
-3. 双击 [`G474_Starter.ioc`](G474_Starter.ioc)，确认 CubeMX 能正常打开本工程。
+3. 打开 `.ioc` 文件时，推荐在 VS Code 左侧 **STM32Cube** 面板点击 **启动 STM32CubeMX**，然后在 CubeMX 中选择 **File → Open Project**，打开工程根目录下的 `G474_Starter.ioc`。
+
+> 不建议直接点击 README 里的 `.ioc` 路径。Markdown 预览会把它交给 Windows 的文件关联；如果 CubeMX 的安装路径关联失效，会弹出“打开外部程序时出错（0x2）”。这不表示工程文件丢失，按上面的方式从 CubeMX 内打开即可。修复方法见[详细故障排查](docs/TROUBLESHOOTING.md)。
 
 如果你现在只想编译和烧录仓库中已经生成好的代码，可以暂时跳过 CubeMX；当你需要修改引脚、时钟或外设参数时再安装。不要在 `gpio.c`、`spi.c` 等生成文件中硬改参数。
 
@@ -249,6 +251,7 @@ VS Code 调试暂时不可用时，可以使用 [STM32CubeProgrammer](https://ww
 | `No target found` | 板卡是否有 3.3 V、VTref、共地、PA13/PA14 是否接反、NRST 是否连接 |
 | 没有生成 ELF | 是否打开工程根目录、Bundle 是否完整、是否选中 Debug、第一条编译错误是什么 |
 | VS Code 未发现工程 | 根目录是否直接包含 `.ioc` 和 `CMakeLists.txt`；运行 Set up/Discover STM32Cube project |
+| 点击 `.ioc` 报 `0x2` | CubeMX 的 Windows 文件关联错误；从 STM32Cube 面板启动 CubeMX 后用 File → Open Project 打开 |
 | Windows 不识别 ST-LINK | 重新安装 ST-LINK USB 驱动，检查设备管理器和 USB 线 |
 | 下载后停在 `main()` | 正常；调试配置要求停在 `main`，再按一次 F5 |
 | OLED 没有菜单 | 确认程序已继续运行，再检查 I2C4、0x3C、3.3 V 和上拉 |
@@ -259,7 +262,7 @@ VS Code 调试暂时不可用时，可以使用 [STM32CubeProgrammer](https://ww
 
 - 想看“每个外设是什么、代码从哪里开始读”：打开 [docs/PERIPHERALS.md](docs/PERIPHERALS.md)。
 - 遇到 ST-LINK、Default_Handler、SD、UART 或 CAN 问题：打开 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)。
-- 想改引脚或时钟：打开 [`G474_Starter.ioc`](G474_Starter.ioc)，在 CubeMX 修改并重新生成；自定义代码应放在 `USER CODE` 区域或 `User/`。
+- 想改引脚或时钟：从 VS Code 的 STM32Cube 面板启动 CubeMX，再打开工程根目录的 `G474_Starter.ioc`；修改并重新生成后，自定义代码仍应放在 `USER CODE` 区域或 `User/`。
 
 ## 10. 参考与图片说明
 

@@ -480,7 +480,7 @@ static void Buzzer_TestProcess(void)
 ## 15. CubeMX 重新生成代码
 
 1. 提交或备份当前可编译版本。
-2. 打开 [`G474_Starter.ioc`](../G474_Starter.ioc)，修改 Pinout、Clock、NVIC 或外设参数。
+2. 从 VS Code 的 STM32Cube 面板启动 CubeMX，再打开工程根目录的 `G474_Starter.ioc`，修改 Pinout、Clock、NVIC 或外设参数。
 3. Project Manager 中保持 Toolchain=CMake，并启用 Keep User Code。
 4. Generate Code。
 5. 检查 Git 差异并执行干净构建。

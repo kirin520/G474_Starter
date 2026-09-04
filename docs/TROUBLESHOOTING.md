@@ -79,6 +79,29 @@ cmake --build --preset Debug --clean-first --parallel
 
 成功产物是 `build/Debug/G474_Starter.elf`。
 
+### 5.1 点击 `.ioc` 时报“打开外部程序时出错（0x2）”
+
+这个提示通常不是 `.ioc` 文件缺失，而是 Windows 保存的 CubeMX 打开命令有误。最常见情况是 CubeMX 安装路径含空格，但注册表中的程序路径没有用双引号包住。
+
+先用不依赖文件关联的方法继续工作：
+
+1. 在 VS Code 左侧打开 **STM32Cube** 面板。
+2. 点击 **启动 STM32CubeMX**。
+3. 在 CubeMX 中选择 **File → Open Project**。
+4. 选择工程根目录中的 `G474_Starter.ioc`。
+
+如果希望恢复双击打开功能，可以重新安装/修复 STM32CubeMX，或在 Windows 的“打开方式”中重新选择 `STM32CubeMX.exe`。典型安装位置是：
+
+```text
+C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX\STM32CubeMX.exe
+```
+
+正确的打开命令必须为可执行文件路径加双引号，例如：
+
+```text
+"C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX\STM32CubeMX.exe" "%1"
+```
+
 ## 6. OLED 不亮或花屏
 
 1. 确认模块使用 3.3 V 并共地。
