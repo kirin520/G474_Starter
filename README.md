@@ -4,8 +4,8 @@
 
 > 第一次使用只做 7 件事：安装 VS Code → 安装 ST 官方扩展 → 下载工具包和 ST-LINK 驱动 → 打开正确目录 → 接好 SWD → Build → 按 F5 下载。
 
-- [外设原理与代码教学](docs/PERIPHERALS.md)
-- [详细故障排查](docs/TROUBLESHOOTING.md)
+- [外设原理与代码教学（在线打开）](https://github.com/kirin520/G474_Starter/blob/main/docs/PERIPHERALS.md)
+- [详细故障排查（在线打开）](https://github.com/kirin520/G474_Starter/blob/main/docs/TROUBLESHOOTING.md)
 - [公开仓库主页](https://github.com/kirin520/G474_Starter)
 
 > 安全提示：上电不会自动写 FRAM 或 SD。只有进入对应菜单并短按 PC2 才会测试写入。`SD Card Test` 会覆盖 SD 卡根目录中的 `G474_DEMO.TXT`。
@@ -37,7 +37,9 @@
 | [`STM32G474XX_FLASH.ld`](STM32G474XX_FLASH.ld) | Flash、RAM 地址和程序段布局 | 只读学习 |
 | [`startup_stm32g474xx.s`](startup_stm32g474xx.s) | 中断向量表和复位入口 | 只读学习 |
 
-推荐阅读顺序：`main.c` → `User/Inc/oled.h` → `User/Src/oled.c` → 其他感兴趣的驱动。协议细节见[外设教学分册](docs/PERIPHERALS.md)。
+推荐阅读顺序：`main.c` → `User/Inc/oled.h` → `User/Src/oled.c` → 其他感兴趣的驱动。协议细节见[外设教学分册（在线打开）](https://github.com/kirin520/G474_Starter/blob/main/docs/PERIPHERALS.md)。
+
+> 在本地 VS Code 中阅读分册时，也可以按 `Ctrl+P`，输入 `docs/PERIPHERALS.md` 或 `docs/TROUBLESHOOTING.md` 后按回车。这种方式不依赖 Windows 的 `.md` 文件关联。
 
 ## 2. 配置 Windows 开发环境
 
@@ -77,7 +79,7 @@
 2. 第一次启动时按提示登录 ST 账号并安装 STM32G4 Firmware Package。
 3. 打开 `.ioc` 文件时，推荐在 VS Code 左侧 **STM32Cube** 面板点击 **启动 STM32CubeMX**，然后在 CubeMX 中选择 **File → Open Project**，打开工程根目录下的 `G474_Starter.ioc`。
 
-> 不建议直接点击 README 里的 `.ioc` 路径。Markdown 预览会把它交给 Windows 的文件关联；如果 CubeMX 的安装路径关联失效，会弹出“打开外部程序时出错（0x2）”。这不表示工程文件丢失，按上面的方式从 CubeMX 内打开即可。修复方法见[详细故障排查](docs/TROUBLESHOOTING.md)。
+> 不建议直接点击 README 里的 `.ioc` 路径。Markdown 预览会把它交给 Windows 的文件关联；如果 CubeMX 的安装路径关联失效，会弹出“打开外部程序时出错（0x2）”。这不表示工程文件丢失，按上面的方式从 CubeMX 内打开即可。修复方法见[详细故障排查（在线打开）](https://github.com/kirin520/G474_Starter/blob/main/docs/TROUBLESHOOTING.md)。
 
 如果你现在只想编译和烧录仓库中已经生成好的代码，可以暂时跳过 CubeMX；当你需要修改引脚、时钟或外设参数时再安装。不要在 `gpio.c`、`spi.c` 等生成文件中硬改参数。
 
@@ -242,7 +244,7 @@ VS Code 调试暂时不可用时，可以使用 [STM32CubeProgrammer](https://ww
 5. `System Status`：查看 OLED、FRAM、SPI 和 CAN 状态。
 6. 最后再测试 FRAM、SD、UART 和 CAN。
 
-各菜单页面的硬件连接、CubeMX 配置、最小代码和练习都在[外设原理与代码教学](docs/PERIPHERALS.md)。
+各菜单页面的硬件连接、CubeMX 配置、最小代码和练习都在[外设原理与代码教学（在线打开）](https://github.com/kirin520/G474_Starter/blob/main/docs/PERIPHERALS.md)。
 
 ## 8. 首装常见问题
 
@@ -256,12 +258,12 @@ VS Code 调试暂时不可用时，可以使用 [STM32CubeProgrammer](https://ww
 | 下载后停在 `main()` | 正常；调试配置要求停在 `main`，再按一次 F5 |
 | OLED 没有菜单 | 确认程序已继续运行，再检查 I2C4、0x3C、3.3 V 和上拉 |
 
-需要逐项定位时，请转到[详细故障排查](docs/TROUBLESHOOTING.md)。
+需要逐项定位时，请转到[详细故障排查（在线打开）](https://github.com/kirin520/G474_Starter/blob/main/docs/TROUBLESHOOTING.md)。
 
 ## 9. 下一步学什么
 
-- 想看“每个外设是什么、代码从哪里开始读”：打开 [docs/PERIPHERALS.md](docs/PERIPHERALS.md)。
-- 遇到 ST-LINK、Default_Handler、SD、UART 或 CAN 问题：打开 [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)。
+- 想看“每个外设是什么、代码从哪里开始读”：打开[外设原理与代码教学](https://github.com/kirin520/G474_Starter/blob/main/docs/PERIPHERALS.md)；本地文件是 `docs/PERIPHERALS.md`。
+- 遇到 ST-LINK、Default_Handler、SD、UART 或 CAN 问题：打开[详细故障排查](https://github.com/kirin520/G474_Starter/blob/main/docs/TROUBLESHOOTING.md)；本地文件是 `docs/TROUBLESHOOTING.md`。
 - 想改引脚或时钟：从 VS Code 的 STM32Cube 面板启动 CubeMX，再打开工程根目录的 `G474_Starter.ioc`；修改并重新生成后，自定义代码仍应放在 `USER CODE` 区域或 `User/`。
 
 ## 10. 参考与图片说明

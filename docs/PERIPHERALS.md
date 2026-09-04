@@ -2,7 +2,7 @@
 
 本分册用于完成第一次烧录之后的学习。它不要求你一次读完，建议按“简单 GPIO → I2C → SPI/SD → UART → CAN”的顺序练习。
 
-[返回入门 README](../README.md) · [故障排查](TROUBLESHOOTING.md)
+[返回入门 README](https://github.com/kirin520/G474_Starter/blob/main/README.md) · [故障排查](https://github.com/kirin520/G474_Starter/blob/main/docs/TROUBLESHOOTING.md)
 
 ## 1. 阅读路线与程序主线
 

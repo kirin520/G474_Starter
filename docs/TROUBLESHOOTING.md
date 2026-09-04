@@ -2,7 +2,7 @@
 
 遇到问题时按“供电与接线 → CubeMX 配置 → HAL 返回值 → 应用显示”的顺序检查。一次只改变一个条件。
 
-[返回入门 README](../README.md) · [外设教学](PERIPHERALS.md)
+[返回入门 README](https://github.com/kirin520/G474_Starter/blob/main/README.md) · [外设教学](https://github.com/kirin520/G474_Starter/blob/main/docs/PERIPHERALS.md)
 
 ## 1. ST-LINK 提示 `No target found`
 
