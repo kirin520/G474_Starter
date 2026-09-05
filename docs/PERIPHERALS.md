@@ -1,8 +1,30 @@
 # 外设原理与代码教学
 
-本分册用于完成第一次烧录之后的学习。它不要求你一次读完，建议按“简单 GPIO → I2C → SPI/SD → UART → CAN”的顺序练习。
+本分册用于完成第一次烧录之后的学习。它不要求你一次读完，建议按“简单 GPIO → 按键 → UART → I2C → OLED/FRAM → SPI/SD → CAN”的顺序逐项练习。每学完一节，都先运行最小代码并观察真实硬件现象，再阅读完整驱动。
 
 [返回入门 README](https://github.com/kirin520/G474_Starter/blob/main/README.md) · [故障排查](https://github.com/kirin520/G474_Starter/blob/main/docs/TROUBLESHOOTING.md)
+
+## 0. 推荐配套教程
+
+想了解具体外设的详细用法，可以配合下面两套教程学习：
+
+- [keysking 的 STM32 视频教程（Bilibili）](https://www.bilibili.com/video/BV12v4y1y7uV/)：课程中包含 GPIO、外部中断、UART、I2C、OLED、时钟树和编码器等内容，适合先通过动画和实验理解现象。
+- [波特律动 STM32 配套文档](https://docs.baud-dance.com/docs/stm32/intro)：适合按章节查阅操作步骤、例程和基础知识。
+
+这两套资料与本工程的学习方向一致，但示例芯片、引脚、工程工具和部分 HAL 配置可能不同。本工程使用 **STM32G474VET6、VS Code、CubeMX、HAL 和 CMake**，因此应学习教程中的原理与操作思路，实际引脚、时钟和函数参数以本工程 `.ioc` 和本文档为准，不要整段照抄其他开发板的代码。
+
+### 阅读一个外设时先分清四层
+
+初学者最容易把“CubeMX 配置”和“自己调用外设”混在一起。本工程每个外设都可以按下面四层阅读：
+
+| 层次 | 去哪里看 | 解决什么问题 |
+|---|---|---|
+| 1. 硬件连接 | 原理图、本文档引脚表 | 信号接到哪个引脚，电平和供电是否正确 |
+| 2. CubeMX 配置 | `G474_Starter.ioc` | 选择外设模式、引脚、时钟、参数和中断 |
+| 3. HAL 初始化 | `Core/Src/gpio.c`、`usart.c` 等 | `MX_xxx_Init()` 如何把配置写入 MCU |
+| 4. 用户调用 | `Core/Src/main.c` 与 `User/` | 初始化之后，怎样真正发送、接收、显示或保存数据 |
+
+学习时遵循固定步骤：先确认接线，再确认 `.ioc`，然后找到 `MX_xxx_Init()`，最后看主循环中调用了哪个函数。出现故障时也按这个顺序倒查，不要一开始就修改 HAL 驱动库。
 
 ## 1. 阅读路线与程序主线
 
@@ -59,6 +81,13 @@ GPIO 输出能主动输出高电平或低电平。本板 LED 接法决定了 PB1
 - 初始化代码：[`gpio.c`](../Core/Src/gpio.c)。
 - 页面示例：[`main.c`](../Core/Src/main.c) 中 `LED_TestProcess()`。
 
+### 怎么使用
+
+1. CubeMX 将 PB11 配置为 `GPIO_Output`，并命名为 `STATUS_LED`。
+2. `main()` 调用 `MX_GPIO_Init()` 后，PB11 才真正成为输出引脚；本工程已经完成这一步。
+3. 用户代码通过 `HAL_GPIO_WritePin()` 设置电平，或通过 `HAL_GPIO_TogglePin()` 翻转电平。
+4. 本板 LED 是低电平点亮，所以判断亮灭时应读取引脚输出电平，而不能按“高电平一定点亮”理解。
+
 ### 最小代码
 
 ```c
@@ -97,6 +126,19 @@ EXTI 可以在引脚出现边沿时打断主程序。PC2 空闲时被上拉，�
 - 中断入口：[`stm32g4xx_it.c`](../Core/Src/stm32g4xx_it.c)。
 - 回调和 20 ms 消抖：[`main.c`](../Core/Src/main.c) 的 `HAL_GPIO_EXTI_Callback()` 与 `Key_Update()`。
 
+### 一次按键是怎样传到主循环的
+
+```text
+PC2 从高变低
+  -> EXTI2_IRQHandler()                 CubeMX 生成的中断入口
+  -> HAL_GPIO_EXTI_IRQHandler(KEY_Pin)  HAL 清除中断标志
+  -> HAL_GPIO_EXTI_Callback()            用户回调，只置 key_irq_flag
+  -> Key_Update()                        主循环做 20 ms 消抖
+  -> key_short_event/key_long_event      页面处理按键事件
+```
+
+必须先在 `.ioc` 中打开 EXTI2 的 NVIC 中断，否则引脚虽然能读到电平，回调函数却不会执行。中断只负责快速记录事件；真正的按键识别、OLED 显示和模式切换都放在主循环中。
+
 ### 最小代码
 
 ```c
@@ -126,6 +168,8 @@ GPIO 输入用于读取外部高低电平。SW_1、SW_2 有板外上拉，拨到
 - PC14=`SW_1`、PC15=`SW_2`：Input、No pull。
 - 示例：[`main.c`](../Core/Src/main.c) 中 `Switch_TestProcess()`。
 
+读取输入前只需要确保 `MX_GPIO_Init()` 已执行。`HAL_GPIO_ReadPin()` 返回的是物理电平，本工程再把低电平转换成更容易理解的逻辑状态 `ON=1`：
+
 ```c
 uint8_t sw1 =
     (HAL_GPIO_ReadPin(SW_1_GPIO_Port, SW_1_Pin) == GPIO_PIN_RESET);
@@ -152,6 +196,16 @@ uint8_t value = (uint8_t)((sw2 << 1U) | sw1);
 - CubeMX 代码：[`tim.c`](../Core/Src/tim.c)。
 - 驱动接口：[`encoder.h`](../User/Inc/encoder.h)。
 - 驱动实现：[`encoder.c`](../User/Src/encoder.c)。
+
+### 怎么使用
+
+1. CubeMX 把 PC0、PC1 分配给 TIM1_CH1、TIM1_CH2，并选择 `Encoder Mode TI12`。
+2. `main()` 先调用 `MX_TIM1_Init()` 完成寄存器配置。
+3. 再调用一次 `Encoder_Init()`，驱动会清零计数器并启动两个通道。
+4. 主循环持续调用 `Encoder_Update()`，把硬件16位计数扩展为软件32位位置。
+5. 需要显示位置时调用 `Encoder_GetCount()`；短按清零时调用 `Encoder_Reset()`。
+
+编码器不是“调用一次就自动得到最终位置”的普通函数。TIM1 在后台计数，但软件必须周期读取并累计，`Encoder_Update()` 调用间隔过长且一次旋转超过半个16位范围时，软件将无法判断真实方向。
 
 ### 最小代码
 
@@ -185,6 +239,14 @@ I2C 使用 SCL 和 SDA 两根线连接多个设备，设备靠地址区分。本
 - Kernel clock=PCLK1=170 MHz。
 - 生成代码：[`i2c.c`](../Core/Src/i2c.c)。
 
+### 地址、寄存器地址和数据不要混淆
+
+- **设备地址**：决定当前和总线上的哪颗芯片通信，例如 OLED 为 `0x3C`、FRAM 为 `0x50`。
+- **内部地址/寄存器地址**：决定访问这颗芯片内部的哪个位置，例如 FRAM 的 `0x0100`。
+- **数据**：真正读取或写入的字节。
+
+使用 I2C 的基本流程是：调用 `MX_I2C4_Init()` → 探测设备是否 ACK → 按器件手册发送命令或读写内部地址 → 检查 HAL 返回值。OLED 和 FRAM 共用 PC6/PC7，但靠设备地址区分，不需要切换引脚。
+
 HAL 把地址参数最低位留给读写位，所以传入 7 位地址时要左移：
 
 ```c
@@ -193,6 +255,8 @@ HAL_StatusTypeDef status =
 ```
 
 头文件中仍应写人类常用的 7 位地址 `0x3C`，不要改成 `0x78`。
+
+`HAL_I2C_IsDeviceReady()` 只说明地址有设备应答，不代表器件型号和全部功能一定正确。返回 `HAL_OK` 后，还要继续执行真实的显示或读写测试。
 
 **正常现象：** `0x3C` 和 `0x50` 都能应答。  
 **常见错误：** 没 ACK 时检查地址、3.3 V、共地和上拉；SDA/SCL 一直低时检查短路或从机锁住总线。  
@@ -209,6 +273,16 @@ SSD1306 兼容 128×64 OLED 使用 I2C4，7 位地址 `0x3C`。发送前的控�
 - [`oled.h`](../User/Inc/oled.h)：公开函数。
 - [`oled.c`](../User/Src/oled.c)：初始化、帧缓冲、像素和刷新。
 - [`font.h`](../User/Inc/font.h)、[`font.c`](../User/Src/font.c)：ASCII 与数字字模。
+
+### 怎么使用
+
+1. `MX_I2C4_Init()` 先初始化 I2C4。
+2. `OLED_Init()` 探测 `0x3C`，并向 SSD1306 发送显示方向、扫描方式等初始化命令。
+3. `OLED_Clear()`、`OLED_ShowString()`、`OLED_DrawPixel()` 只修改 MCU RAM 中的画面。
+4. 所有内容画完后调用一次 `OLED_Refresh()`，物理屏幕才更新。
+5. 通过 `OLED_Ready` 或 `OLED_Refresh()` 返回值判断通信是否成功。
+
+建议采用“清屏 → 画完一整页内容 → 刷新一次”的写法。不要每画一个字符就刷新，否则 I2C 数据量增大，屏幕也更容易闪烁。
 
 ### 最小代码
 
@@ -237,16 +311,30 @@ FRAM 是掉电保持存储器，读写接口类似 EEPROM，但不需要等待�
 - [`fram.h`](../User/Inc/fram.h)：公开接口。
 - [`fram.c`](../User/Src/fram.c)：地址检查和安全自检。
 
+### 怎么使用
+
+1. `MX_I2C4_Init()` 初始化共用总线。
+2. `FRAM_Init()` 只探测地址 `0x50`，不会修改存储内容。
+3. 准备发送缓冲区和接收缓冲区，再调用 `FRAM_Write()`、`FRAM_Read()`。
+4. 检查每一步是否返回 `HAL_OK`，并使用 `memcmp()` 比较写入和读回数据。
+5. 规划固定地址区域，避免不同功能把数据写到同一位置。
+
 ```c
 uint8_t tx[2] = {0x12U, 0x34U};
 uint8_t rx[2];
 
 if (FRAM_Init() == HAL_OK)
 {
-    (void)FRAM_Write(0x0100U, tx, sizeof(tx));
-    (void)FRAM_Read(0x0100U, rx, sizeof(rx));
+    if ((FRAM_Write(0x0100U, tx, sizeof(tx)) == HAL_OK) &&
+        (FRAM_Read(0x0100U, rx, sizeof(rx)) == HAL_OK) &&
+        (memcmp(tx, rx, sizeof(tx)) == 0))
+    {
+        /* 写入和读回内容一致 */
+    }
 }
 ```
+
+上面使用 `memcmp()` 时需要包含 `<string.h>`。不要忽略返回值后直接比较缓冲区，因为通信失败时 `rx` 中可能仍是旧数据。
 
 底层使用 `HAL_I2C_Mem_Read/Write()` 和 `I2C_MEMADD_SIZE_16BIT`。`FRAM_SelfTest()` 会备份最后 16 字节，写测试图案、读回比较、恢复原数据并再次校验。
 
@@ -270,6 +358,16 @@ SPI 使用 SCK、MOSI、MISO 和 CS。它没有 I2C 那样的设备地址，每�
 - 初始化分频 `/256`，约 332 kHz。
 - 配置代码：[`spi.c`](../Core/Src/spi.c)。
 
+### 一次 SPI 通信怎样进行
+
+1. `MX_SPI4_Init()` 设置主机模式、Mode 0、8 bit 和初始时钟分频。
+2. 先把目标设备的 CS 拉低，表示本次传输属于它。
+3. 调用发送、接收或全双工收发函数产生时钟并交换数据。
+4. 检查 HAL 返回值。
+5. 完成本次命令后把 CS 拉高，结束这一帧通信。
+
+SPI 没有设备地址，也没有像 I2C 那样的统一 ACK。收到 `0xFF` 可能表示总线空闲、设备未选中或设备确实返回了 `0xFF`，必须结合 CS、命令格式和器件手册判断。
+
 ### 最小代码
 
 ```c
@@ -287,6 +385,8 @@ SPI 是全双工的：读取时仍要发送占位字节才能产生时钟。
 **练习：** 用逻辑分析仪观察 SD 的 CMD0 六字节命令包。
 
 ## 10. SD SPI 协议和 FatFs
+
+SD 卡测试涉及供电、SPI 协议、块读写和文件系统四层，建议最后再学。先确认 SPI4 最小收发代码能运行，再进入 SD 页面。当前工程不使用卡槽插入检测脚，因此“没插卡”和“卡不应答”都会在初始化阶段表现为失败。
 
 ### 三层代码分别做什么
 
@@ -320,6 +420,14 @@ if (SD_FileTest())
 }
 ```
 
+在 OLED 菜单中测试时：
+
+1. 使用 FAT16/FAT32 格式的卡，并在断电状态下插入。
+2. 进入 `SD Card Test` 页面，此时不会立即写卡。
+3. 短按 PC2 后才调用 `SD_FileTest()`。
+4. 依次观察 Init、Mount、Write、Verify 四项结果。
+5. 测试结束后可在电脑上打开根目录的 `G474_DEMO.TXT` 检查内容。
+
 `SD_FileTest()` 会覆盖根目录中的 `G474_DEMO.TXT`，写入后关闭文件，重新打开并校验 `STM32G474 SD CARD TEST\r\n`。当前支持 FAT16/FAT32，不支持 exFAT；长文件名已开启。
 
 **正常现象：** Init、Mount、Write、Verify 全部 PASS。  
@@ -338,6 +446,8 @@ UART 是异步串口，两端必须共地并设置相同参数。本工程 USART
 - USART3：PB10 TX、PE15 RX，示例页面主要使用 TX。
 - CubeMX 配置：[`usart.c`](../Core/Src/usart.c)。
 - 页面与回调：[`main.c`](../Core/Src/main.c)。
+
+CubeMX 中两个串口均选择 `Asynchronous`、115200 bit/s、8 data bits、1 stop bit、no parity、no hardware flow control。`main()` 调用 `MX_USART2_UART_Init()` 和 `MX_USART3_UART_Init()` 后才能使用 HAL 串口函数。
 
 USB 转串口模块应使用 **3.3 V TTL 电平**，并交叉连接：模块 RX 接开发板 TX，模块 TX 接开发板 RX，两边 GND 必须相连。不要把 RS-232 接口直接接到 MCU 引脚。
 
@@ -465,6 +575,16 @@ if (CAN_GetLastFrame(&frame))
 
 `CAN_Init()` 把 PD4 拉低，接收所有 `0x000~0x7FF` 标准数据帧，拒绝扩展帧和远程帧。发送头明确使用 `FDCAN_CLASSIC_CAN` 与 `FDCAN_BRS_OFF`。
 
+### 怎么使用
+
+1. `MX_GPIO_Init()` 先让 PD4 成为输出，`MX_FDCAN1_Init()` 写入位时序参数。
+2. `CAN_Init()` 拉低 TCAN3413 的 STB、配置标准帧过滤器、打开 RX FIFO0 通知并启动 FDCAN1。
+3. 主循环持续调用 `CAN_Process()`，更新 Bus-Off 和 HAL 错误状态。
+4. 发送时准备 ID、长度和最多8字节数据，再调用 `CAN_SendStd()`。
+5. 接收中断会保存最新一帧；主循环通过 `CAN_GetLastFrame()` 复制出来使用。
+
+`HAL_FDCAN_AddMessageToTxFifoQ()` 返回成功只代表报文已放入 MCU 发送队列，不一定代表总线上已经有节点正确接收。Normal Mode 下需要另一个波特率一致的 CAN 节点发送 ACK，因此使用 PCAN 测试时必须先连接并设置为 500 kbit/s。
+
 ### PCAN 设置与接线
 
 - PCAN-View：Classic CAN（SJA1000）、500 kbit/s、Standard 11-bit。
@@ -479,6 +599,8 @@ if (CAN_GetLastFrame(&frame))
 **练习：** 让 PCAN 发送 `0x321`，观察 OLED 的最新 ID、DLC 和计数。
 
 ## 13. OLED 菜单怎么工作
+
+上电后先旋转编码器移动 `>` 光标，PC2 短按进入当前项目，长按约800 ms返回主菜单。进入 FRAM、SD、CAN 等页面后，短按才执行测试或发送动作；这样上电不会自动改写外部存储器。
 
 [`main.c`](../Core/Src/main.c) 中：
 
